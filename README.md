@@ -179,6 +179,50 @@ python main.py
 1위 글: "..." (https://...)
 ```
 
+#### Lightpanda 백엔드 실행 데모 (파일 다운로드)
+
+경량·고속 Lightpanda 백엔드로 "자료를 찾아 다운로드"하는 전체 흐름 예시입니다.
+**터미널 2개**가 필요합니다 — 하나는 CDP 서버, 하나는 에이전트.
+
+**터미널 ① — Lightpanda CDP 서버 (계속 띄워 둠)**
+```console
+$ lightpanda serve --obey-robots --host 127.0.0.1 --port 9222
+info(server): starting Lightpanda CDP server
+info(server): listening on ws://127.0.0.1:9222
+```
+
+**터미널 ② — 에이전트 실행**
+```console
+$ echo "AI_BROWSER_CDP_URL=ws://127.0.0.1:9222" >> .env   # (setup_env.py로 설정해도 됨)
+$ python main.py
+
+╭───────────────────────────────────────────────╮
+│ AI Agentic CLI Browser                          │
+│ AI(Claude)가 대신 웹사이트를 탐색해 자료를 찾고 받아줍니다. │
+╰───────────────────────────────────────────────╯
+접속할 웹사이트 URL: https://www.python.org
+이 사이트에서 무엇을 찾고 싶으신가요?: 최신 3.x 안정판 소스 tarball(.tgz)을 받아줘
+백엔드: Lightpanda (CDP ws://127.0.0.1:9222)
+
+'https://www.python.org' 로 이동 중…
+'https://www.python.org' 로 이동했습니다. (현재: https://www.python.org/)
+스텝 1 · navigate https://www.python.org/downloads/  (다운로드 페이지로 직행)
+  → 'https://www.python.org/downloads/' 로 이동했습니다.
+스텝 2 · navigate https://www.python.org/downloads/release/python-XYZ/  (최신 안정판 릴리스로 이동)
+  → 이동했습니다.
+스텝 3 · download https://www.python.org/ftp/python/X.Y.Z/Python-X.Y.Z.tgz  (소스 tarball 직접 다운로드)
+  → 파일을 저장했습니다: /home/user/AI-Agentic-CLI-Browser/downloads/Python-X.Y.Z.tgz
+스텝 4 · finish  (목표 달성)
+╭──────────────── ✅ 완료 ────────────────╮
+│ 최신 안정판 소스 tarball을 저장했습니다:        │
+│ downloads/Python-X.Y.Z.tgz                  │
+╰─────────────────────────────────────────╯
+```
+
+> 첫 줄 `백엔드: Lightpanda (CDP …)` 로 Lightpanda에 정상 접속됐는지 확인할 수 있습니다.
+> 로컬 Chromium 폴백이면 `백엔드: 로컬 Chromium` 으로 표시됩니다.
+> (URL·스텝 수·버전 문자열은 실제 사이트 상태에 따라 달라집니다.)
+
 ---
 
 ## 환경 변수 (.env)
