@@ -1,0 +1,13 @@
+# AI Agentic CLI Browser — Python 의존성
+# 설치: pip install -r requirements.txt  (이후 playwright install 필요)
+
+# 참고: 권장 백엔드인 Lightpanda는 pip 패키지가 아니라 별도 바이너리다.
+#   brew install lightpanda-io/browser/lightpanda  (또는 릴리스 바이너리/Docker)
+# Playwright는 이 Lightpanda(CDP)에 접속하는 클라이언트로 그대로 사용한다.
+
+anthropic>=0.40.0          # Claude API SDK (prompt caching 사용)
+playwright>=1.40.0         # CDP 클라이언트 / 로컬 Chromium 폴백
+beautifulsoup4>=4.12.0     # HTML 파싱
+lxml>=5.0.0                # BeautifulSoup용 빠른 파서
+python-dotenv>=1.0.0       # .env에서 API 키 로드
+rich>=13.0.0               # CLI 진행 상황·결과 출력
