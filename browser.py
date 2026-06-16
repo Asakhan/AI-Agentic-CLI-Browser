@@ -134,7 +134,10 @@ class Browser:
             context.set_default_timeout(_DEFAULT_TIMEOUT_MS)
         except PlaywrightError:
             pass  # 일부 CDP 구현은 미지원
-        self._page = context.pages[0] if context.pages else context.new_page()
+        # Lightpanda 가 CDP 접속 시 미리 만들어 두는 초기 페이지(about:blank)는
+        # 재사용하면 goto() 가 domcontentloaded 에 도달하지 못하고 멈춘다(타임아웃).
+        # 따라서 그 초기 페이지는 쓰지 않고 항상 새 페이지를 연다.
+        self._page = context.new_page()
 
     def _start_local(self) -> None:
         """Playwright 내장 Chromium을 직접 띄운다 (폴백)."""
@@ -181,6 +184,21 @@ class Browser:
         except PlaywrightError as exc:
             raise BrowserError(f"페이지 내용을 읽지 못했습니다: {exc}") from exc
 
+    def _wait_dom_ready(self, timeout_ms: int = _DEFAULT_TIMEOUT_MS) -> None:
+        """DOM 이 준비될(readyState=interactive/complete) 때까지 대기한다.
+
+        Lightpanda 같은 일부 CDP 백엔드는 ``domcontentloaded``/``load``
+        라이프사이클 이벤트를 누락하는 경우가 있어, Playwright 의
+        ``wait_until="domcontentloaded"`` 가 콘텐츠가 다 와도 시간 초과로
+        끝나곤 한다. 그래서 이벤트 대신 ``document.readyState`` 를 직접
+        확인해 준비 여부를 판단한다. 시간 초과 시 PlaywrightTimeoutError 전파.
+        """
+        self.page.wait_for_function(
+            "document.readyState === 'interactive' "
+            "|| document.readyState === 'complete'",
+            timeout=timeout_ms,
+        )
+
     def _wait_settled(self) -> None:
         """네트워크가 잠잠해질 때까지 잠깐 대기 (실패해도 치명적이지 않음)."""
         try:
@@ -193,7 +211,11 @@ class Browser:
     def navigate(self, url: str) -> str:
         """지정 URL로 이동한다."""
         try:
-            self.page.goto(url, wait_until="domcontentloaded")
+            # 네비게이션 시작은 commit 으로 기다린다. domcontentloaded/load
+            # 이벤트는 Lightpanda 등에서 누락될 수 있어 신뢰하지 않고,
+            # DOM 준비는 readyState 로 직접 확인한다(_wait_dom_ready).
+            self.page.goto(url, wait_until="commit")
+            self._wait_dom_ready()
             self._wait_settled()
             return f"'{url}' 로 이동했습니다. (현재: {self.page.url})"
         except PlaywrightTimeoutError:
